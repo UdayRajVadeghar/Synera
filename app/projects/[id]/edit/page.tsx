@@ -21,6 +21,7 @@ interface ProjectFormData {
 
 export default function EditProject({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const projectId = params.id;
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProject, setLoadingProject] = useState(true);
@@ -45,18 +46,18 @@ export default function EditProject({ params }: { params: { id: string } }) {
   // Redirect if not logged in
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push(`/login?redirect=/projects/${params.id}/edit`);
+      router.push(`/login?redirect=/projects/${projectId}/edit`);
     } else if (status === 'authenticated') {
       setIsLoading(false);
       fetchProject();
       fetchCategories();
     }
-  }, [status, router, params.id]);
+  }, [status, router, projectId]);
 
   // Fetch project data
   const fetchProject = async () => {
     try {
-      const response = await fetch(`/api/projects/${params.id}`);
+      const response = await fetch(`/api/projects/${projectId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch project');
       }
@@ -65,7 +66,7 @@ export default function EditProject({ params }: { params: { id: string } }) {
       
       // Check if the current user is the creator
       if (session?.user?.id !== data.creatorId) {
-        router.push(`/projects/${params.id}`);
+        router.push(`/projects/${projectId}`);
         return;
       }
       
@@ -151,7 +152,7 @@ export default function EditProject({ params }: { params: { id: string } }) {
       };
 
       // Submit the data
-      const response = await fetch(`/api/projects/${params.id}`, {
+      const response = await fetch(`/api/projects/${projectId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -168,7 +169,7 @@ export default function EditProject({ params }: { params: { id: string } }) {
         
         // Redirect after short delay
         setTimeout(() => {
-          router.push(`/projects/${params.id}`);
+          router.push(`/projects/${projectId}`);
         }, 2000);
       } else {
         setMessage({ type: 'error', text: data.message || 'Failed to update project' });
@@ -205,7 +206,7 @@ export default function EditProject({ params }: { params: { id: string } }) {
         <div className="max-w-3xl mx-auto">
           {/* Breadcrumb */}
           <div className="mb-6">
-            <Link href={`/projects/${params.id}`} className="text-slate-400 hover:text-violet-400 flex items-center">
+            <Link href={`/projects/${projectId}`} className="text-slate-400 hover:text-violet-400 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -454,7 +455,7 @@ export default function EditProject({ params }: { params: { id: string } }) {
               {/* Submit Buttons */}
               <div className="flex justify-end space-x-4 pt-4">
                 <Link
-                  href={`/projects/${params.id}`}
+                  href={`/projects/${projectId}`}
                   className="px-4 py-2 border border-slate-600 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors"
                 >
                   Cancel

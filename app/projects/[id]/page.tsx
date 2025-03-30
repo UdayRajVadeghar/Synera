@@ -35,6 +35,8 @@ interface Project {
 }
 
 export default function ProjectDetails({ params }: { params: { id: string } }) {
+  const projectId = params.id;
+  
   const [project, setProject] = useState<Project | null>(null);
   const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +49,7 @@ export default function ProjectDetails({ params }: { params: { id: string } }) {
     const fetchProject = async () => {
       try {
         // Fetch project details
-        const response = await fetch(`/api/projects/${params.id}`);
+        const response = await fetch(`/api/projects/${projectId}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch project');
@@ -58,7 +60,7 @@ export default function ProjectDetails({ params }: { params: { id: string } }) {
         
         // Check if the user has already expressed interest
         if (session?.user?.id) {
-          const interestResponse = await fetch(`/api/projects/interest/check?projectId=${params.id}`);
+          const interestResponse = await fetch(`/api/projects/interest/check?projectId=${projectId}`);
           if (interestResponse.ok) {
             const interestData = await interestResponse.json();
             setHasExpressedInterest(interestData.hasInterest);
@@ -76,7 +78,7 @@ export default function ProjectDetails({ params }: { params: { id: string } }) {
     if (status !== 'loading') {
       fetchProject();
     }
-  }, [params.id, session?.user?.id, status]);
+  }, [projectId, session?.user?.id, status]);
   
   // Check if the current user is the creator
   const isCreator = session?.user?.id === project?.creatorId;
