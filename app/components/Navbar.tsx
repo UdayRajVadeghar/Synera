@@ -2,14 +2,17 @@
 
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { FormEvent, useEffect, useState } from 'react';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   
   // Handle scroll event to change navbar style
   useEffect(() => {
@@ -30,7 +33,17 @@ export default function Navbar() {
   // Close mobile menu when path changes
   useEffect(() => {
     setIsMenuOpen(false);
+    setIsSearchOpen(false);
   }, [pathname]);
+
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/projects?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+      setIsSearchOpen(false);
+    }
+  };
 
   return (
     <nav 
@@ -67,6 +80,23 @@ export default function Navbar() {
             >
               About
             </Link>
+            
+            {/* Search icon */}
+            <button 
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className="text-slate-300 hover:text-white transition-colors"
+              aria-label="Search projects"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                className="h-5 w-5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
             
             {/* Auth buttons */}
             {status === 'loading' ? (
@@ -105,7 +135,22 @@ export default function Navbar() {
           </div>
           
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            <button 
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className="text-slate-300 hover:text-white p-2 focus:outline-none"
+              aria-label="Search projects"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                className="h-5 w-5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-slate-300 hover:text-white p-2 focus:outline-none"
@@ -128,6 +173,53 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      
+      {/* Search overlay */}
+      {isSearchOpen && (
+        <div className="absolute w-full bg-slate-900/95 backdrop-blur-sm shadow-lg py-4 px-4 sm:px-6 lg:px-8 transition-all duration-300">
+          <form onSubmit={handleSearch} className="max-w-lg mx-auto relative">
+            <input
+              type="text"
+              placeholder="Search for collaborations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-800 text-white border border-slate-700 rounded-full py-2 pl-10 pr-4 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              autoFocus
+            />
+            <button 
+              type="submit"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              aria-label="Search"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                className="h-5 w-5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+            <button 
+              type="button" 
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              onClick={() => setIsSearchOpen(false)}
+              aria-label="Close search"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor" 
+                className="h-5 w-5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </form>
+        </div>
+      )}
       
       {/* Mobile menu */}
       {isMenuOpen && (

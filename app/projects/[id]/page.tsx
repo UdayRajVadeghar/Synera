@@ -1,3 +1,4 @@
+import InterestButton from '@/components/InterestButton';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
@@ -22,6 +23,11 @@ export default async function ProjectDetails({ params }: { params: { id: string 
             githubUsername: true,
           },
         },
+        interests: session?.user?.id ? {
+          where: {
+            userId: session.user.id
+          }
+        } : undefined
       },
     });
 
@@ -31,6 +37,9 @@ export default async function ProjectDetails({ params }: { params: { id: string 
 
     // Check if the current user is the creator
     const isCreator = session?.user?.id === project.creator.id;
+    
+    // Check if the user has already expressed interest
+    const hasExpressedInterest = project.interests && project.interests.length > 0;
     
     // Format the date
     const formattedDate = new Date(project.createdAt).toLocaleDateString('en-US', {
@@ -160,9 +169,16 @@ export default async function ProjectDetails({ params }: { params: { id: string 
                 <div className="bg-slate-800/50 rounded-xl p-6">
                   <h2 className="text-lg font-semibold text-slate-100 mb-4">Interested in joining?</h2>
                   {session ? (
-                    <button className="w-full px-4 py-3 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-xl font-semibold hover:from-violet-600 hover:to-indigo-600 transition-all duration-300">
-                      Apply to Join
-                    </button>
+                    !isCreator ? (
+                      <InterestButton 
+                        projectId={project.id} 
+                        hasExpressedInterest={hasExpressedInterest} 
+                      />
+                    ) : (
+                      <div className="px-4 py-3 bg-slate-700 text-slate-400 rounded-xl font-semibold text-center">
+                        You are the creator
+                      </div>
+                    )
                   ) : (
                     <Link
                       href={`/login?redirect=/projects/${project.id}`}

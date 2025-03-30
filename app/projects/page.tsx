@@ -17,13 +17,33 @@ interface Project {
   };
 }
 
-export default async function BrowseProjects({ searchParams }: { searchParams: { category?: string } }) {
+export default async function BrowseProjects({ 
+  searchParams 
+}: { 
+  searchParams: { 
+    category?: string;
+    search?: string; 
+  } 
+}) {
   const selectedCategory = searchParams.category || 'All';
+  const searchQuery = searchParams.search || '';
 
   // Build query filter
-  const filter = selectedCategory !== 'All' 
-    ? { category: selectedCategory } 
-    : {};
+  let filter: any = {};
+  
+  // Add category filter if not "All"
+  if (selectedCategory !== 'All') {
+    filter.category = selectedCategory;
+  }
+  
+  // Add search filter if provided
+  if (searchQuery) {
+    filter.OR = [
+      { title: { contains: searchQuery, mode: 'insensitive' } },
+      { description: { contains: searchQuery, mode: 'insensitive' } },
+      { techStack: { hasSome: [searchQuery] } },
+    ];
+  }
 
   // Fetch projects from the database
   const projects = await prisma.project.findMany({
@@ -57,7 +77,7 @@ export default async function BrowseProjects({ searchParams }: { searchParams: {
     <div className="min-h-screen bg-[#0f172a] pt-20">
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <h1 className="text-3xl font-bold text-slate-100">Browse Projects</h1>
             <Link 
               href="/projects/create"
@@ -67,13 +87,28 @@ export default async function BrowseProjects({ searchParams }: { searchParams: {
             </Link>
           </div>
 
+          {/* Search indicator */}
+          {searchQuery && (
+            <div className="mb-4">
+              <p className="text-slate-300">
+                Showing results for: <span className="text-violet-400 font-semibold">"{searchQuery}"</span>
+                <Link 
+                  href={selectedCategory !== 'All' ? `/projects?category=${selectedCategory}` : '/projects'} 
+                  className="ml-2 text-slate-400 hover:text-white underline"
+                >
+                  Clear search
+                </Link>
+              </p>
+            </div>
+          )}
+
           {/* Filters */}
           <div className="bg-slate-800/50 p-4 rounded-xl mb-8">
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => (
                 <Link
                   key={category}
-                  href={`/projects${category === 'All' ? '' : `?category=${category}`}`}
+                  href={`/projects${category === 'All' ? '' : `?category=${category}`}${searchQuery ? `&search=${searchQuery}` : ''}`}
                   className={`px-3 py-1 rounded-full text-sm ${
                     category === selectedCategory 
                       ? 'bg-violet-500 text-white' 
@@ -134,13 +169,27 @@ export default async function BrowseProjects({ searchParams }: { searchParams: {
           ) : (
             <div className="bg-slate-800/50 rounded-xl p-12 text-center">
               <h3 className="text-xl font-semibold text-slate-100 mb-2">No projects found</h3>
-              <p className="text-slate-400 mb-6">Be the first to create a project and start collaborating</p>
-              <Link 
-                href="/projects/create"
-                className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-lg inline-block"
-              >
-                Create Project
-              </Link>
+              <p className="text-slate-400 mb-6">
+                {searchQuery 
+                  ? `No projects match your search for "${searchQuery}". Try a different search term or create your own project.` 
+                  : 'Be the first to create a project and start collaborating'}
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                {searchQuery && (
+                  <Link 
+                    href="/projects"
+                    className="px-6 py-3 border border-slate-600 text-slate-300 hover:text-white hover:border-slate-500 rounded-lg inline-block"
+                  >
+                    Clear Search
+                  </Link>
+                )}
+                <Link 
+                  href="/projects/create"
+                  className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-lg inline-block"
+                >
+                  Create Project
+                </Link>
+              </div>
             </div>
           )}
         </div>
