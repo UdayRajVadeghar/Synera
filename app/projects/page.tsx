@@ -22,11 +22,13 @@ export default async function BrowseProjects({
 }: { 
   searchParams: { 
     category?: string;
-    search?: string; 
+    search?: string;
+    difficulty?: string;
   } 
 }) {
   const selectedCategory = searchParams.category || 'All';
   const searchQuery = searchParams.search || '';
+  const selectedDifficulty = searchParams.difficulty || 'All';
 
   // Build query filter
   let filter: any = {};
@@ -36,12 +38,21 @@ export default async function BrowseProjects({
     filter.category = selectedCategory;
   }
   
+  // Add difficulty filter if not "All"
+  if (selectedDifficulty !== 'All') {
+    filter.difficulty = selectedDifficulty.toLowerCase();
+  }
+  
   // Add search filter if provided
   if (searchQuery) {
+    // Create a more comprehensive search across multiple fields
     filter.OR = [
       { title: { contains: searchQuery, mode: 'insensitive' } },
       { description: { contains: searchQuery, mode: 'insensitive' } },
-      { techStack: { hasSome: [searchQuery] } },
+      { requirements: { contains: searchQuery, mode: 'insensitive' } },
+      { techStack: { hasSome: searchQuery.split(/[,\s]+/).filter(Boolean) } }, // Split search query to match tech stack
+      { category: { contains: searchQuery, mode: 'insensitive' } },
+      { communication: { contains: searchQuery, mode: 'insensitive' } },
     ];
   }
 
@@ -73,6 +84,9 @@ export default async function BrowseProjects({
   // Create array of categories with 'All' at the beginning
   const categories = ['All', ...existingCategories.map((c: { category: string }) => c.category)];
 
+  // Get available difficulties
+  const difficulties = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+
   return (
     <div className="min-h-screen bg-[#0f172a] pt-20">
       <div className="container mx-auto px-4 py-12">
@@ -93,7 +107,7 @@ export default async function BrowseProjects({
               <p className="text-slate-300">
                 Showing results for: <span className="text-violet-400 font-semibold">"{searchQuery}"</span>
                 <Link 
-                  href={selectedCategory !== 'All' ? `/projects?category=${selectedCategory}` : '/projects'} 
+                  href={generateUrl({ category: selectedCategory, difficulty: selectedDifficulty })} 
                   className="ml-2 text-slate-400 hover:text-white underline"
                 >
                   Clear search
@@ -104,20 +118,74 @@ export default async function BrowseProjects({
 
           {/* Filters */}
           <div className="bg-slate-800/50 p-4 rounded-xl mb-8">
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Link
-                  key={category}
-                  href={`/projects${category === 'All' ? '' : `?category=${category}`}${searchQuery ? `&search=${searchQuery}` : ''}`}
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    category === selectedCategory 
-                      ? 'bg-violet-500 text-white' 
-                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
-                  }`}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Categories */}
+              <div>
+                <p className="text-sm text-slate-400 mb-2">Categories</p>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <Link
+                      key={category}
+                      href={generateUrl({ category, difficulty: selectedDifficulty, search: searchQuery })}
+                      className={`px-3 py-1 rounded-full text-sm ${
+                        category === selectedCategory 
+                          ? 'bg-violet-500 text-white' 
+                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Difficulties */}
+              <div>
+                <p className="text-sm text-slate-400 mb-2">Difficulty Level</p>
+                <div className="flex flex-wrap gap-2">
+                  {difficulties.map((difficulty) => (
+                    <Link
+                      key={difficulty}
+                      href={generateUrl({ category: selectedCategory, difficulty, search: searchQuery })}
+                      className={`px-3 py-1 rounded-full text-sm ${
+                        difficulty === selectedDifficulty 
+                          ? 'bg-violet-500 text-white' 
+                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      {difficulty}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Search form */}
+            <div className="mt-4">
+              <form action="/projects" method="GET" className="relative">
+                <input
+                  type="text"
+                  name="search"
+                  defaultValue={searchQuery}
+                  placeholder="Search by title, description, tech stack..."
+                  className="w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2 px-4 pr-10 text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                />
+                {/* Preserve other filters */}
+                {selectedCategory !== 'All' && (
+                  <input type="hidden" name="category" value={selectedCategory} />
+                )}
+                {selectedDifficulty !== 'All' && (
+                  <input type="hidden" name="difficulty" value={selectedDifficulty} />
+                )}
+                <button
+                  type="submit"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
                 >
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </Link>
-              ))}
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </form>
             </div>
           </div>
 
@@ -131,7 +199,7 @@ export default async function BrowseProjects({
                       <div className="flex justify-between items-start mb-4">
                         <h2 className="text-xl font-semibold text-slate-100 truncate">{project.title}</h2>
                         <span className="px-2 py-1 bg-slate-700/50 rounded text-xs text-slate-300">
-                          {project.difficulty}
+                          {project.difficulty.charAt(0).toUpperCase() + project.difficulty.slice(1)}
                         </span>
                       </div>
                       <p className="text-slate-400 mb-4 line-clamp-3">{project.description}</p>
@@ -175,12 +243,12 @@ export default async function BrowseProjects({
                   : 'Be the first to create a project and start collaborating'}
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                {searchQuery && (
+                {(searchQuery || selectedCategory !== 'All' || selectedDifficulty !== 'All') && (
                   <Link 
                     href="/projects"
                     className="px-6 py-3 border border-slate-600 text-slate-300 hover:text-white hover:border-slate-500 rounded-lg inline-block"
                   >
-                    Clear Search
+                    Clear Filters
                   </Link>
                 )}
                 <Link 
@@ -196,4 +264,32 @@ export default async function BrowseProjects({
       </div>
     </div>
   );
+}
+
+// Helper function to generate URL with filters
+function generateUrl({ 
+  category, 
+  difficulty, 
+  search 
+}: { 
+  category?: string, 
+  difficulty?: string, 
+  search?: string 
+}) {
+  const params = new URLSearchParams();
+  
+  if (category && category !== 'All') {
+    params.append('category', category);
+  }
+  
+  if (difficulty && difficulty !== 'All') {
+    params.append('difficulty', difficulty);
+  }
+  
+  if (search) {
+    params.append('search', search);
+  }
+  
+  const queryString = params.toString();
+  return `/projects${queryString ? `?${queryString}` : ''}`;
 } 
