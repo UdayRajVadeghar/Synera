@@ -23,11 +23,6 @@ export default async function ProjectDetails({ params }: { params: { id: string 
             githubUsername: true,
           },
         },
-        interests: session?.user?.id ? {
-          where: {
-            userId: session.user.id
-          }
-        } : undefined
       },
     });
 
@@ -39,7 +34,20 @@ export default async function ProjectDetails({ params }: { params: { id: string 
     const isCreator = session?.user?.id === project.creator.id;
     
     // Check if the user has already expressed interest
-    const hasExpressedInterest = project.interests && project.interests.length > 0;
+    let hasExpressedInterest = false;
+    
+    if (session?.user?.id) {
+      const interest = await prisma.projectInterest.findUnique({
+        where: {
+          userId_projectId: {
+            userId: session.user.id,
+            projectId: project.id,
+          },
+        },
+      });
+      
+      hasExpressedInterest = !!interest;
+    }
     
     // Format the date
     const formattedDate = new Date(project.createdAt).toLocaleDateString('en-US', {

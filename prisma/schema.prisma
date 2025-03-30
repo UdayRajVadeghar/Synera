@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,22 +8,22 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  password      String?
-  image         String?
-  emailVerified DateTime?
+  id             String            @id @default(cuid())
+  name           String?
+  email          String            @unique
+  password       String?
+  image          String?
+  emailVerified  DateTime?
   githubUsername String?
-  bio           String?   @db.Text
-  links         Json?
-  role          Role      @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  projects      Project[]
-  interests     ProjectInterest[]
+  bio            String?
+  links          Json?
+  role           Role              @default(USER)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  accounts       Account[]
+  projects       Project[]
+  interests      ProjectInterest[]
+  sessions       Session[]
 }
 
 model Account {
@@ -38,15 +32,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -68,36 +61,35 @@ model VerificationToken {
 }
 
 model Project {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  requirements String
-  techStack   String[]
-  teamSize    Int
-  timeframe   String
-  difficulty  String
-  category    String
-  commitment  String
-  communication String
+  id             String            @id @default(cuid())
+  title          String
+  description    String
+  requirements   String
+  techStack      String[]
+  teamSize       Int
+  timeframe      String
+  difficulty     String
+  category       String
+  commitment     String
+  communication  String
   githubRequired Boolean
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  creatorId   String
-  creator     User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  interests   ProjectInterest[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  creatorId      String
+  creator        User              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  interests      ProjectInterest[]
 }
 
 model ProjectInterest {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   userId    String
   projectId String
   status    InterestStatus @default(PENDING)
-  message   String?  @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  message   String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, projectId])
 }
